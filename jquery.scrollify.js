@@ -14,10 +14,10 @@
  * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
  * the Software, and to permit persons to whom the Software is furnished to do so,
  * subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
@@ -43,9 +43,8 @@
 		scrolled = false,
 		manualScroll,
 		swipeScroll,
+        destroyed = false,
 		util,
-		disabled = false,
-		scrollTime = 0,
 		settings = {
 			//section should be an identifier that is the same for each section
 			section: "section",
@@ -61,7 +60,7 @@
 			afterResize:function() {}
 		};
 	function animateScroll(index,instant) {
-		
+
 		if(names[index]) {
 			settings.before(index,elements);
 			interstitialIndex = 1;
@@ -75,17 +74,19 @@
 				$(settings.target).stop().animate({
 					scrollTop: heights[index]
 				}, settings.scrollSpeed,settings.easing);
-				
+
 				$(settings.target).promise().done(function(){locked = false;settings.after(index,elements);});
 			}
 
 		}
 	}
 	$.scrollify = function(options) {
+        destroyed = false;
+
 		$.easing['easeOutExpo'] = function(x, t, b, c, d) {
 			return (t==d) ? b+c : c * (-Math.pow(2, -10 * t/d) + 1) + b;
 		};
-		
+
 
 		manualScroll = {
 			handleMousedown:function() {
@@ -97,15 +98,15 @@
 				if(scrolled) {
 					manualScroll.calculateNearest();
 				}
-				
+
 			},
 			handleScroll:function() {
-				
+
 				if(timeoutId){
-					clearTimeout(timeoutId);  
+					clearTimeout(timeoutId);
 				}
 				timeoutId = setTimeout(function(){
-						
+
 					scrolled = true;
 					if(scrollable===false) {
 						return false;
@@ -124,7 +125,7 @@
 					diff;
 				for(;i<max;i++) {
 					diff = Math.abs(heights[i] - top);
-					
+
 					if(diff < prev) {
 						prev = diff;
 						closest = i;
@@ -139,22 +140,17 @@
 				if(!overflow[index]) {
 					e.preventDefault();
 				}
+
 				delta = delta || -e.originalEvent.detail / 3 || e.originalEvent.wheelDelta / 120;
 
-				//clearTimeout(timeoutId);  
-				
+				//clearTimeout(timeoutId);
+
 				//timeoutId = setTimeout(function(){
-					
+
 					if(locked) {
-						scrollTime = new Date().getTime();
 						return false;
-					} else {
-						//if its locked but still scrolling, its most likely momentum
-						if(((new Date().getTime()) < (scrollTime+50))) {
-							scrollTime = new Date().getTime();
-							return false;
-						}
 					}
+
 					if(delta<0) {
 						if(index<heights.length-1) {
 							if(atBottom()) {
@@ -202,15 +198,15 @@
 				} else {
 					$("body").css({"overflow":"hidden"});
 				}
-				
+
 				$(document).bind('DOMMouseScroll mousewheel',manualScroll.wheelHandler);
 				$(document).bind('keydown', manualScroll.keyHandler);
 			}
 		};
-		
+
 		swipeScroll = {
 			touches : {
-				"touchstart": {"y":-1}, 
+				"touchstart": {"y":-1},
 				"touchmove" : {"y":-1},
 				"touchend"  : false,
 				"direction" : "undetermined"
@@ -222,7 +218,7 @@
 			},
 			touchHandler: function(event) {
 				var touch;
-				if (typeof event !== 'undefined'){	
+				if (typeof event !== 'undefined'){
 					if (typeof event.touches !== 'undefined') {
 						touch = event.touches[0];
 						switch (event.type) {
@@ -239,18 +235,18 @@
 										event.preventDefault();
 									//}
 									if((swipeScroll.options.timeStamp+swipeScroll.options.timeGap)<(new Date().getTime()) && swipeScroll.touches.touchend == false) {
-										
+
 										swipeScroll.touches.touchend = true;
 										if (swipeScroll.touches.touchstart.y > -1) {
 
 											if(Math.abs(swipeScroll.touches.touchmove.y-swipeScroll.touches.touchstart.y)>swipeScroll.options.distance) {
 												if(swipeScroll.touches.touchstart.y < swipeScroll.touches.touchmove.y) {
-													
+
 													swipeScroll.up();
 
 												} else {
 													swipeScroll.down();
-													
+
 												}
 											}
 										}
@@ -265,10 +261,10 @@
 										if(Math.abs(swipeScroll.touches.touchmove.y-swipeScroll.touches.touchstart.y)>swipeScroll.options.distance) {
 											if(swipeScroll.touches.touchstart.y < swipeScroll.touches.touchmove.y) {
 												swipeScroll.up();
-												
+
 											} else {
 												swipeScroll.down();
-												
+
 											}
 										}
 										swipeScroll.touches.touchstart.y = -1;
@@ -283,7 +279,7 @@
 			down: function() {
 				if(index<=heights.length-1) {
 					if(atBottom() && index<heights.length-1) {
-						
+
 						index++;
 						animateScroll(index,false);
 					} else {
@@ -295,23 +291,23 @@
 						} else {
 							interstitialScroll(parseInt(heights[index])+(elements[index].height()-$(window).height()));
 						}
-						
+
 					}
 				}
 			},
 			up: function() {
 				if(index>=0) {
 					if(atTop() && index>0) {
-						
+
 						index--;
 						animateScroll(index,false);
 					} else {
-						
+
 						if(interstitialIndex>2) {
 
 							interstitialIndex -= 1;
 							interstitialScroll(parseInt(heights[index])+($(window).height()*interstitialIndex));
-							
+
 						} else {
 
 							interstitialIndex = 1;
@@ -323,8 +319,8 @@
 			},
 			init: function() {
 				if (document.addEventListener) {
-					document.addEventListener('touchstart', swipeScroll.touchHandler, false);	
-					document.addEventListener('touchmove', swipeScroll.touchHandler, false);	
+					document.addEventListener('touchstart', swipeScroll.touchHandler, false);
+					document.addEventListener('touchmove', swipeScroll.touchHandler, false);
 					document.addEventListener('touchend', swipeScroll.touchHandler, false);
 				}
 			}
@@ -343,7 +339,7 @@
 		};
 
 		settings = $.extend(settings, options);
-		
+
 		sizePanels();
 
 		calculatePositions(false);
@@ -354,7 +350,7 @@
 		} else {
 			animateScroll(index,false);
 		}
-		
+
 		manualScroll.init();
 		swipeScroll.init();
 
@@ -367,19 +363,21 @@
 		}
 
 		function sizePanels() {
-			$(settings.section).each(function(i) {
+            if(!destroyed) {
+    			$(settings.section).each(function(i) {
 
-				if($(this).css("height","auto").outerHeight()<$(window).height()) {
-					$(this).css({"height":$(window).height()});
-					overflow[i] = false;
-				} else {
-					overflow[i] = true;
-				}
-			});
+    				if($(this).css("height","auto").outerHeight()<$(window).height()) {
+    					$(this).css({"height":$(window).height()});
+    					overflow[i] = false;
+    				} else {
+    					overflow[i] = true;
+    				}
+    			});
+            }
 		}
 
 		function calculatePositions(resize) {
-			
+
 			$(settings.section).each(function(i){
 				if(i>0) {
 					heights[i] = $(this).offset().top + settings.offset;
@@ -391,14 +389,14 @@
 				} else {
 					names[i] = "#" + (i + 1);
 				}
-				
-				
+
+
 				elements[i] = $(this);
 
 				if(window.location.hash===names[i]) {
 					index = i;
 					hasLocation = true;
-					
+
 				}
 			});
 
@@ -417,7 +415,7 @@
 		}
 		function atBottom() {
 			top = $(window).scrollTop();
-			
+
 			if(top<parseInt(heights[index])+(elements[index].height()-$(window).height())) {
 				return false;
 			} else {
@@ -479,6 +477,7 @@
 		}
 	};
 	$.scrollify.destroy = function() {
+        destroyed = true;
 		$(settings.section).each(function() {
 			$(this).css("height","auto");
 		});
@@ -492,22 +491,19 @@
 		$(document).unbind('keydown', manualScroll.keyHandler);
 
 		if (document.addEventListener) {
-			document.removeEventListener('touchstart', swipeScroll.touchHandler, false);	
-			document.removeEventListener('touchmove', swipeScroll.touchHandler, false);	
+			document.removeEventListener('touchstart', swipeScroll.touchHandler, false);
+			document.removeEventListener('touchmove', swipeScroll.touchHandler, false);
 			document.removeEventListener('touchend', swipeScroll.touchHandler, false);
 		}
-		heights = names = elements = overflow = null;
+		heights = [],
+        names = [],
+        elements = [],
+        overflow = [];
 	};
 	$.scrollify.update = function() {
 		util.handleResize();
 	};
 	$.scrollify.current = function() {
 		return elements[index];
-	};
-	$.scrollify.disable = function() {
-		disable = true;
-	};
-	$.scrollify.enable = function() {
-		disabled = false;
 	};
 }(jQuery,this,document));
